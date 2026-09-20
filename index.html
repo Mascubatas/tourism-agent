@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arequipa Travel Expert Chat</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --user-bubble: #2563eb;
+    --assistant-bubble: #334155;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .app {
+    width: 100%;
+    max-width: 720px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+  }
+  header {
+    padding-bottom: 4px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+  }
+  .disclaimer {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin: 4px 0 12px 0;
+  }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .user {
+    align-self: flex-end;
+    background: var(--user-bubble);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .assistant {
+    align-self: flex-start;
+    background: var(--assistant-bubble);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+  .thinking {
+    align-self: flex-start;
+    color: var(--muted);
+    font-style: italic;
+  }
+  form {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  #input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: none;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 1rem;
+  }
+  #input:focus {
+    outline: 2px solid var(--user-bubble);
+  }
+  button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: var(--user-bubble);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>✈️ Arequipa Travel Expert</h1>
+    <div class="disclaimer">Verify visas, hours, prices, advisories, airfares, and guide contacts yourself - details change and nothing here is booked automatically.</div>
+  </header>
+  <div id="messages"></div>
+  <form id="chat-form">
+    <input id="input" type="text" placeholder="Ask about your next trip..." autocomplete="off" />
+    <button id="send-btn" type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+  const messagesEl = document.getElementById('messages');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send-btn');
+
+  let conversation = [];
+
+  function addBubble(role, text) {
+    const div = document.createElement('div');
+    div.className = 'bubble ' + role;
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  function addThinking() {
+    const div = document.createElement('div');
+    div.className = 'thinking';
+    div.textContent = 'thinking...';
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    conversation.push({ role: 'user', content: text });
+    addBubble('user', text);
+    input.value = '';
+    sendBtn.disabled = true;
+    input.disabled = true;
+
+    const thinkingEl = addThinking();
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversation }),
+      });
+
+      const data = await res.json();
+      thinkingEl.remove();
+
+      if (!res.ok) {
+        addBubble('assistant', data.error || "Sorry, I'm having trouble answering right now.");
+      } else {
+        conversation.push({ role: 'assistant', content: data.reply });
+        addBubble('assistant', data.reply);
+      }
+    } catch (err) {
+      thinkingEl.remove();
+      addBubble('assistant', "Sorry, I'm having trouble answering right now. Please try again.");
+    } finally {
+      sendBtn.disabled = false;
+      input.disabled = false;
+      input.focus();
+    }
+  });
+</script>
+</body>
+</html>
