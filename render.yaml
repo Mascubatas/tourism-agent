@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: arequipa-travel-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: AZURE_ENDPOINT
+        sync: false
+      - key: AZURE_DEPLOYMENT
+        sync: false
+      - key: AZURE_API_KEY
+        sync: false

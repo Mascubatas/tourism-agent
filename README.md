@@ -25,6 +25,29 @@ calling an Azure AI Foundry (OpenAI-compatible) endpoint.
    ```
 5. Open [http://localhost:8000](http://localhost:8000) in your browser.
 
+## Deploying on Render
+
+This repo includes a `render.yaml` blueprint, so Render can configure the service automatically.
+
+1. Push this repo to GitHub (already done if you're reading this on GitHub).
+2. In the [Render dashboard](https://dashboard.render.com), click **New > Blueprint**, pick this repo,
+   and Render will detect `render.yaml` (a Python web service running
+   `uvicorn app:app --host 0.0.0.0 --port $PORT`).
+   - Alternatively, click **New > Web Service** manually and set:
+     - **Runtime**: Python 3
+     - **Build Command**: `pip install -r requirements.txt`
+     - **Start Command**: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+3. Under the service's **Environment** tab, add these environment variables (never commit real values
+   to the repo — `.env` is gitignored and Render only reads variables you set in its dashboard):
+   - `AZURE_ENDPOINT` = `https://<your-resource>.services.ai.azure.com/openai/v1`
+   - `AZURE_DEPLOYMENT` = your deployment name
+   - `AZURE_API_KEY` = your Azure AI Foundry API key
+4. Deploy. Render builds the app and serves it at the URL it assigns (e.g.
+   `https://arequipa-travel-bot.onrender.com`).
+5. After changing any environment variable in Render, use **Manual Deploy > Clear build cache & deploy**
+   or just restart the service — Render does not auto-reload on env var changes, similar to the local
+   `--reload` caveat below.
+
 ## Troubleshooting
 
 1. **Changed `.env` but nothing changed** — `uvicorn --reload` watches `.py` files but **not** `.env`.
